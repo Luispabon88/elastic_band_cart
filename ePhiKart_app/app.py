@@ -1,39 +1,33 @@
 import streamlit as st
+
+from views.home import show_home
 from modules.energia_trabajo_potencia import app_energia_trabajo_potencia
 
+
 st.set_page_config(
-    page_title="eΦCiencia App",
-    page_icon="🧪",
+    page_title="eΦKart App",
+    page_icon="🛒",
     layout="wide"
 )
 
-st.title("eΦKart App")
-st.subheader("Asistente de análisis experimental para laboratorios de física")
 
-st.info(
-    "La aplicación no reemplaza el experimento ni el análisis de video. "
-    "Procesa los datos obtenidos por los estudiantes mediante FizziQ."
-)
+def main():
+    st.sidebar.title("eΦKart App")
 
-menu = st.sidebar.selectbox(
-    "Selecciona una actividad",
-    [
-        "Inicio",
-        "Trabajo, energía y potencia"
-    ]
-)
+    menu = st.sidebar.radio(
+        "Selecciona una sección",
+        [
+            "Inicio",
+            "Trabajo, energía y potencia"
+        ]
+    )
 
-if menu == "Inicio":
-    st.markdown("""
-    ## Flujo de trabajo
+    if menu == "Inicio":
+        show_home()
 
-    1. El estudiante realiza el experimento físico.
-    2. Graba el movimiento.
-    3. Analiza el video en FizziQ.
-    4. Exporta la tabla de datos.
-    5. Carga los datos en esta aplicación.
-    6. Compara resultados teóricos y experimentales.
-    """)
+    elif menu == "Trabajo, energía y potencia":
+        app_energia_trabajo_potencia()
 
-elif menu == "Trabajo, energía y potencia":
-    app_energia_trabajo_potencia()
+
+if __name__ == "__main__":
+    main()
