@@ -1,32 +1,83 @@
 import pandas as pd
+from io import StringIO
 
 
 def read_fizziq_file(uploaded_file):
+    """
+    Lector específico para archivos CSV exportados desde FizziQ.
+    Detecta la fila donde inicia la tabla: #;t;x;Vx;Ax
+    """
 
-    separadores = [",", ";", "\t"]
+    uploaded_file.seek(0)
+    content = uploaded_file.read().decode("utf-8", errors="ignore")
 
-    errores = []
+    lines = content.splitlines()
 
-    for sep in separadores:
+    header_index = None
 
-        try:
+    for i, line in enumerate(lines):
+        clean_line = line.strip()
 
-            uploaded_file.seek(0)
+        if clean_line.startswith("#;") or clean_line.startswith("#,"):
+            header_index = i
+            break
 
-            df = pd.read_csv(
-                uploaded_file,
-                sep=sep,
-                engine="python"
-            )
+    if header_index is None:
+        raise ValueError(
+            "No se encontró la fila de encabezados de FizziQ. "
+            "Debe existir una fila tipo: #;t;x;Vx;Ax"
+        )
 
-            # Si solo encontró una columna probablemente el separador es incorrecto
-            if len(df.columns) > 1:
-                return df
+    table_text = "\n".join(lines[header_index:])
 
-        except Exception as e:
-            errores.append(str(e))
+    # Detectar separador
+    header_line = lines[header_index]
 
-    raise Exception(
-        "No fue posible interpretar el archivo CSV.\n\n"
-        + "\n".join(errores)
+    if ";" in header_line:
+        sep = ";"
+    elif "," in header_line:
+        sep = ","
+    else:
+        sep = "\t"
+
+    df = pd.read_csv(
+        StringIO(table_text),
+        sep=sep,
+        decimal=",",
+        engine="python"
     )
+
+    # Limpiar columnas
+    df.columns = [str(col).strip() for col in df.columns]
+
+    # Convertir datos numéricos
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    return df
+
+
+def detect_columns(df):
+    detected = {
+        "time": None,
+        "position": None,
+        "velocity": None,
+        "acceleration": None
+    }
+
+    for col in df.columns:
+        col_lower = str(col).lower().strip()
+
+        if col_lower in ["t", "tiempo", "time", "t(s)", "t (s)"]:
+            detected["time"] = col
+
+        elif col_lower in ["x", "posición", "posicion", "position", "x(m)", "x (m)"]:
+            detected["position"] = col
+
+        elif col_lower in ["vx", "v", "velocidad", "velocity", "v(m/s)", "v (m/s)"]:
+            detected["velocity"] = col
+
+        elif col_lower in ["ax", "a", "aceleracion", "aceleración", "acceleration", "a(m/s2)", "a (m/s2)"]:
+            detected["acceleration"] = col
+
+    return detected
