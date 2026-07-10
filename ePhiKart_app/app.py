@@ -7,7 +7,7 @@ from modules.energia_trabajo_potencia import app_energia_trabajo_potencia
 
 st.set_page_config(
     page_title="eΦKart App",
-    page_icon="🛒",
+    page_icon=":red_car:",
     layout="wide"
 )
 
